@@ -4,12 +4,30 @@ Use this after you’ve added **PostgreSQL** and **two services** from the [Q2P 
 
 ---
 
+## Quick fix: "Could not find index.html" on deploy
+
+If Medusa fails with **Could not find index.html in the admin build directory**, the repo Railway deploys from doesn't have the start-from-`.medusa/server` fix. Apply it without a code change:
+
+1. Open the **Medusa** service in Railway.
+2. Go to **Settings** → **Deploy** (or find **Custom Start Command** / **Start Command** override).
+3. Set **Custom Start Command** to:
+   ```bash
+   node scripts/wait-for-db.js && node scripts/ensure-admin-build.js && (cd .medusa/server && NODE_TLS_REJECT_UNAUTHORIZED=0 pnpm exec medusa start)
+   ```
+4. Redeploy.
+
+To make the fix permanent, merge the Medusa start/build changes into the [Q2P repo](https://github.com/NextGenSoftwareUK/Q2P) (`medusa/package.json` start script, `medusa/railway.json`, `medusa/scripts/ensure-admin-build.js`).
+
+---
+
 ## 1. Configure each service
 
 ### Service 1 – Medusa (backend)
 
 - **Settings** → **Root Directory**: `medusa`
 - Build/start are set via `medusa/railway.json` (no need to set in UI unless you want to override).
+- **Build** runs `pnpm install`, `medusa build`, then `pnpm install --prod` inside `.medusa/server` so the server has its own deps.
+- **Start** runs `wait-for-db` and `ensure-admin-build` from the repo root, then runs `medusa start` from **`.medusa/server`** so the admin `public/admin/index.html` is found (required by Medusa v2).
 
 ### Service 2 – Storefront (Next.js)
 

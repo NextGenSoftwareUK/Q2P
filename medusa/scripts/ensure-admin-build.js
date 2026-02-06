@@ -23,6 +23,12 @@ try {
     cwd: process.cwd(),
     env: { ...process.env, NODE_ENV: 'production' },
   });
+  const serverDir = path.join(process.cwd(), '.medusa', 'server');
+  execSync('pnpm install --prod', {
+    stdio: 'inherit',
+    cwd: serverDir,
+    env: process.env,
+  });
 } catch (e) {
   console.error('medusa build failed:', e.message);
   process.exit(1);
