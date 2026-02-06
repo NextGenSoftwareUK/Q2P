@@ -17,17 +17,18 @@ if (!url) {
   process.exit(1);
 }
 
-// Railway public URL needs SSL (same as medusa-config getDatabaseUrl)
-if (url.includes('proxy.rlwy.net') || url.includes('railway.app')) {
-  const sep = url.includes('?') ? '&' : '?';
-  url = url + sep + 'sslmode=require&connect_timeout=30';
+// Railway public URL: use SSL but accept self-signed cert (Railway uses self-signed)
+const isRailwayPublic = url.includes('proxy.rlwy.net') || url.includes('railway.app');
+const clientConfig = {
+  connectionString: url,
+  connectionTimeoutMillis: 15000,
+};
+if (isRailwayPublic) {
+  clientConfig.ssl = { rejectUnauthorized: false };
 }
 
 async function tryConnect() {
-  const client = new Client({
-    connectionString: url,
-    connectionTimeoutMillis: 15000,
-  });
+  const client = new Client(clientConfig);
   try {
     await client.connect();
     await client.query('SELECT 1');
