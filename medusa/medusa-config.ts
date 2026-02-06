@@ -25,21 +25,26 @@ module.exports = defineConfig({
     }
   },
   modules: [
-    {
-      resolve: '@medusajs/medusa/payment',
-      options: {
-        providers: [
+    // Only register Stripe when STRIPE_API_KEY is set (e.g. in Railway). Lets Medusa start without it for dev/demo.
+    ...(process.env.STRIPE_API_KEY
+      ? [
           {
-            resolve: '@medusajs/medusa/payment-stripe',
-            id: 'stripe',
+            resolve: '@medusajs/medusa/payment',
             options: {
-              apiKey: process.env.STRIPE_API_KEY,
-              webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
-              capture: true,
+              providers: [
+                {
+                  resolve: '@medusajs/medusa/payment-stripe',
+                  id: 'stripe',
+                  options: {
+                    apiKey: process.env.STRIPE_API_KEY,
+                    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+                    capture: true,
+                  },
+                },
+              ],
             },
           },
-        ],
-      },
-    },
+        ]
+      : []),
   ],
 })
