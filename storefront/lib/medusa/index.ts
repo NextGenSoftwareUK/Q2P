@@ -436,46 +436,49 @@ export async function getProducts({
   sortKey?: string;
   categoryId?: string;
 }): Promise<Product[]> {
-  let res;
+  try {
+    let res;
 
-  if (query) {
-    res = await medusaRequest({
-      method: 'GET',
-      path: `/products?q=${query}&limit=100`,
-      tags: ['products']
-    });
-  } else if (categoryId) {
-    res = await medusaRequest({
-      method: 'GET',
-      path: `/products?category_id[]=${categoryId}&limit=100`,
-      tags: ['products']
-    });
-  } else {
-    res = await medusaRequest({ method: 'GET', path: `/products?limit=100`, tags: ['products'] });
-  }
+    if (query) {
+      res = await medusaRequest({
+        method: 'GET',
+        path: `/products?q=${query}&limit=100`,
+        tags: ['products']
+      });
+    } else if (categoryId) {
+      res = await medusaRequest({
+        method: 'GET',
+        path: `/products?category_id[]=${categoryId}&limit=100`,
+        tags: ['products']
+      });
+    } else {
+      res = await medusaRequest({ method: 'GET', path: `/products?limit=100`, tags: ['products'] });
+    }
 
-  if (!res) {
-    console.error("Couldn't fetch products");
-    return [];
-  }
+    if (!res) {
+      return [];
+    }
 
-  let products: Product[] = res?.body.products.map((product: MedusaProduct) =>
-    reshapeProduct(product)
-  );
-
-  sortKey === 'PRICE' &&
-    products.sort(
-      (a, b) =>
-        parseFloat(a.priceRange.maxVariantPrice.amount) -
-        parseFloat(b.priceRange.maxVariantPrice.amount)
+    let products: Product[] = res?.body.products.map((product: MedusaProduct) =>
+      reshapeProduct(product)
     );
 
-  sortKey === 'CREATED_AT' &&
-    products.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    sortKey === 'PRICE' &&
+      products.sort(
+        (a, b) =>
+          parseFloat(a.priceRange.maxVariantPrice.amount) -
+          parseFloat(b.priceRange.maxVariantPrice.amount)
+      );
 
-  reverse && products.reverse();
+    sortKey === 'CREATED_AT' &&
+      products.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
-  return products;
+    reverse && products.reverse();
+
+    return products;
+  } catch {
+    return [];
+  }
 }
 
 export async function getMenu(menu: string): Promise<any[]> {

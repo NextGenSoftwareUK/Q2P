@@ -33,8 +33,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     fetchedRoutes = (await Promise.all([collectionsPromise, productsPromise])).flat();
-  } catch (error) {
-    throw JSON.stringify(error, null, 2);
+  } catch {
+    // Medusa unavailable at build time (e.g. Railway build) – return base routes only
   }
 
   return [...routesMap, ...fetchedRoutes];
