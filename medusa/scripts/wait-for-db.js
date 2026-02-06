@@ -10,17 +10,23 @@ const { Client } = require('pg');
 
 const maxAttempts = parseInt(process.env.DB_WAIT_MAX_ATTEMPTS || '30', 10);
 const delayMs = parseInt(process.env.DB_WAIT_DELAY_MS || '2000', 10);
-const url = process.env.DATABASE_URL || process.env.DATABASE_PUBLIC_URL;
+let url = process.env.DATABASE_URL || process.env.DATABASE_PUBLIC_URL;
 
 if (!url) {
   console.error('wait-for-db: DATABASE_URL (or DATABASE_PUBLIC_URL) not set');
   process.exit(1);
 }
 
+// Railway public URL needs SSL (same as medusa-config getDatabaseUrl)
+if (url.includes('proxy.rlwy.net') || url.includes('railway.app')) {
+  const sep = url.includes('?') ? '&' : '?';
+  url = url + sep + 'sslmode=require&connect_timeout=30';
+}
+
 async function tryConnect() {
   const client = new Client({
     connectionString: url,
-    connectionTimeoutMillis: 10000,
+    connectionTimeoutMillis: 15000,
   });
   try {
     await client.connect();
@@ -33,6 +39,7 @@ async function tryConnect() {
 }
 
 async function main() {
+  console.log('wait-for-db: checking database connectivity...');
   for (let i = 0; i < maxAttempts; i++) {
     if (i > 0) {
       console.log(`Pg connection attempt ${i + 1}/${maxAttempts} in 2s...`);
