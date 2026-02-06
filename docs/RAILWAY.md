@@ -96,6 +96,8 @@ Then get the **publishable API key**:
 
 Put that value in the Storefront variable **`MEDUSA_API_KEY`** and redeploy the storefront.
 
+**If the storefront still shows no products:** (1) Confirm Medusa was seeded successfully (step above). (2) Confirm the storefront has **`MEDUSA_API_KEY`** set to the *publishable* key (title “Webshop” in Admin). (3) Redeploy the storefront after changing variables.
+
 ---
 
 ## 6. Update CORS and redeploy Medusa

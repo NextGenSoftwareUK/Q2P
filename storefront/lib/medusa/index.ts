@@ -45,7 +45,7 @@ export default async function medusaRequest({
     method,
     headers: {
       'Content-Type': 'application/json',
-      'x-publishable-key': MEDUSA_API_KEY
+      'x-publishable-api-key': MEDUSA_API_KEY
     },
     cache,
     ...(tags && { next: { tags } })
