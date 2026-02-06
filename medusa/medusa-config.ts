@@ -2,9 +2,20 @@ import { loadEnv, defineConfig } from '@medusajs/framework/utils'
 
 loadEnv(process.env.NODE_ENV || 'development', process.cwd())
 
+// Prefer DATABASE_URL (Railway internal). Fallback to public URL with SSL for connectivity.
+function getDatabaseUrl() {
+  const url = process.env.DATABASE_URL || process.env.DATABASE_PUBLIC_URL || ''
+  if (!url) return url
+  // If using public URL, ensure SSL and longer connect timeout (Railway).
+  const isPublic = url.includes('proxy.rlwy.net') || url.includes('railway.app')
+  const separator = url.includes('?') ? '&' : '?'
+  const opts = isPublic ? `${separator}sslmode=require&connect_timeout=30` : ''
+  return url + opts
+}
+
 module.exports = defineConfig({
   projectConfig: {
-    databaseUrl: process.env.DATABASE_URL,
+    databaseUrl: getDatabaseUrl(),
     http: {
       storeCors: process.env.STORE_CORS!,
       adminCors: process.env.ADMIN_CORS!,

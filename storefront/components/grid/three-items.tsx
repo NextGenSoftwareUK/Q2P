@@ -1,5 +1,5 @@
 import { GridTileImage } from 'components/grid/tile';
-import { getCategoryProducts } from 'lib/medusa';
+import { getCategoryProducts, getProducts } from 'lib/medusa';
 import type { Product } from 'lib/medusa/types';
 import Link from 'next/link';
 
@@ -38,8 +38,12 @@ function ThreeItemGridItem({
 }
 
 export async function ThreeItemGrid() {
-  // Collections that start with `hidden-*` are hidden from the search page.
-  const homepageItems = await getCategoryProducts('hidden-homepage-featured-items');
+  // Prefer featured category; fall back to first 3 products so the shop shows something when Medusa is up.
+  let homepageItems = await getCategoryProducts('hidden-homepage-featured-items');
+  if (!homepageItems[0] || !homepageItems[1] || !homepageItems[2]) {
+    const allProducts = await getProducts({});
+    homepageItems = allProducts.slice(0, 3);
+  }
 
   if (!homepageItems[0] || !homepageItems[1] || !homepageItems[2]) {
     return (
@@ -50,7 +54,7 @@ export async function ThreeItemGrid() {
             Quest-to-Physical: earn real-world discounts by completing in-world quests.
           </p>
           <p className="text-sm text-neutral-500">
-            Start Medusa backend and run <code className="rounded bg-neutral-200 px-1 dark:bg-neutral-700">pnpm run seed</code> to see products.
+            Connect the Medusa backend (check <code className="rounded bg-neutral-200 px-1 dark:bg-neutral-700">NEXT_PUBLIC_MEDUSA_BACKEND_API</code>) and ensure it’s running. If you just deployed, wait a minute for the server to start.
           </p>
         </div>
       </section>

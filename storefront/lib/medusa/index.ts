@@ -459,7 +459,8 @@ export async function getProducts({
       return [];
     }
 
-    let products: Product[] = res?.body.products.map((product: MedusaProduct) =>
+    const rawProducts = res.body?.products ?? [];
+    const products: Product[] = rawProducts.map((product: MedusaProduct) =>
       reshapeProduct(product)
     );
 

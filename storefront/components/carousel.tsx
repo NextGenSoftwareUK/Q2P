@@ -1,10 +1,10 @@
-import { getCategoryProducts } from 'lib/medusa';
+import { getCategoryProducts, getProducts } from 'lib/medusa';
 import Link from 'next/link';
 import { GridTileImage } from './grid/tile';
 
 export async function Carousel() {
-  // Collections that start with `hidden-*` are hidden from the search page.
-  const products = await getCategoryProducts('hidden-homepage-carousel');
+  let products = await getCategoryProducts('hidden-homepage-carousel');
+  if (!products?.length) products = await getProducts({});
 
   if (!products?.length) return null;
 
