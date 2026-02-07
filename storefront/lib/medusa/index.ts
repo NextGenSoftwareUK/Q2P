@@ -195,7 +195,8 @@ const reshapeImages = (images?: MedusaImage[], productTitle?: string): Image[] =
 };
 
 const reshapeProduct = (product: MedusaProduct): Product => {
-  const variant = product.variants?.[0];
+  const variants = product.variants ?? [];
+  const variant = variants[0];
 
   let amount = '0';
   let currencyCode = 'USD';
@@ -207,7 +208,7 @@ const reshapeProduct = (product: MedusaProduct): Product => {
   const priceRange = {
     maxVariantPrice: {
       amount,
-      currencyCode: product.variants?.[0]?.prices?.[0]?.currency_code.toUpperCase() ?? ''
+      currencyCode: variant?.prices?.[0]?.currency_code?.toUpperCase() ?? ''
     }
   };
 
@@ -215,16 +216,17 @@ const reshapeProduct = (product: MedusaProduct): Product => {
   const createdAt = product.created_at;
   const tags = product.tags?.map((tag) => tag.value) || [];
   const descriptionHtml = product.description ?? '';
-  const featuredImageFilename = product.thumbnail?.match(/.*\/(.*)\..*/)![1];
+  const thumbnail = product.thumbnail ?? '';
+  const featuredImageFilename = thumbnail ? (thumbnail.match(/.*\/(.*)\..*/)?.[1] ?? '') : '';
   const featuredImage = {
-    url: product.thumbnail ?? '',
-    altText: product.thumbnail ? `${product.title} - ${featuredImageFilename}` : ''
+    url: thumbnail,
+    altText: product.title ? `${product.title} - ${featuredImageFilename}` : ''
   };
-  const availableForSale = product.variants?.[0]?.purchasable || true;
+  const availableForSale = variant?.purchasable ?? true;
   const images = reshapeImages(product.images, product.title);
 
-  const variants = product.variants.map((variant) =>
-    reshapeProductVariant(variant, product.options)
+  const variantsReshaped = variants.map((v) =>
+    reshapeProductVariant(v, product.options)
   );
 
   let options = [] as ProductOption[];
@@ -241,7 +243,7 @@ const reshapeProduct = (product: MedusaProduct): Product => {
     descriptionHtml,
     availableForSale,
     options,
-    variants
+    variants: variantsReshaped
   };
 };
 
@@ -371,7 +373,7 @@ export async function getCategories(): Promise<ProductCollection[]> {
     // Reshape categories and hide categories starting with 'hidden'
     const categories = res.body.product_categories
       .map((collection: ProductCategory) => reshapeCategory(collection))
-      .filter((collection: MedusaProductCollection) => !collection.handle.startsWith('hidden'));
+      .filter((collection: MedusaProductCollection) => !(collection.handle ?? '').startsWith('hidden'));
 
     return categories;
   } catch {
@@ -460,9 +462,14 @@ export async function getProducts({
     }
 
     const rawProducts = res.body?.products ?? [];
-    const products: Product[] = rawProducts.map((product: MedusaProduct) =>
-      reshapeProduct(product)
-    );
+    const products: Product[] = [];
+    for (const p of rawProducts) {
+      try {
+        products.push(reshapeProduct(p));
+      } catch {
+        // skip malformed product
+      }
+    }
 
     sortKey === 'PRICE' &&
       products.sort(
@@ -483,22 +490,25 @@ export async function getProducts({
 }
 
 export async function getMenu(menu: string): Promise<any[]> {
-  if (menu === 'next-js-frontend-header-menu') {
-    const categories = await getCategories();
-    return categories.map((cat) => ({
-      title: cat.title,
-      path: cat.path
-    }));
-  }
+  try {
+    if (menu === 'next-js-frontend-header-menu') {
+      const categories = await getCategories();
+      return (categories ?? []).map((cat) => ({
+        title: cat.title,
+        path: cat.path ?? '#'
+      }));
+    }
 
-  if (menu === 'next-js-frontend-footer-menu') {
-    return [
-      { title: 'About Medusa', path: 'https://medusajs.com/' },
-      { title: 'Medusa Docs', path: 'https://docs.medusajs.com/' },
-      { title: 'Medusa Blog', path: 'https://medusajs.com/blog' }
-    ];
+    if (menu === 'next-js-frontend-footer-menu') {
+      return [
+        { title: 'About Medusa', path: 'https://medusajs.com/' },
+        { title: 'Medusa Docs', path: 'https://docs.medusajs.com/' },
+        { title: 'Medusa Blog', path: 'https://medusajs.com/blog' }
+      ];
+    }
+  } catch {
+    // backend unreachable or error – return empty so layout still renders
   }
-
   return [];
 }
 
