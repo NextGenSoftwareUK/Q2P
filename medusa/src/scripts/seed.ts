@@ -65,6 +65,16 @@ export default async function seedDemoData({ container }: ExecArgs) {
 
   const countries = ["gb", "de", "dk", "se", "fr", "es", "it"];
 
+  // Idempotent: skip if already seeded (so we can run seed at container start on Railway)
+  const { data: existingProducts } = await query.graph({
+    entity: "product",
+    fields: ["id"],
+  });
+  if (existingProducts?.length > 0) {
+    logger.info("Products already exist, skipping seed.");
+    return;
+  }
+
   logger.info("Seeding store data...");
   const [store] = await storeModuleService.listStores();
   let defaultSalesChannel = await salesChannelModuleService.listSalesChannels({
